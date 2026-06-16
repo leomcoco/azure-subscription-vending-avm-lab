@@ -20,3 +20,6 @@ federated-credential.json
 .vscode/
 .idea/
 setup/*.local.sh
+setup/*.local.sh
+setup/bootstrap-output.env
+federated-credential.json
