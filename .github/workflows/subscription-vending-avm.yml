@@ -1,6 +1,6 @@
 name: subscription-vending-avm
 
-on:
+"on":
   workflow_dispatch:
     inputs:
       request_file:
@@ -21,6 +21,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: subscription-vending-avm
+  cancel-in-progress: false
+
 jobs:
   terraform:
     name: Terraform AVM Subscription Vending
@@ -31,6 +35,8 @@ jobs:
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      TF_INPUT: false
 
     steps:
       - name: Checkout repository
@@ -40,36 +46,23 @@ jobs:
         id: request
         shell: bash
         run: |
-          set -euo pipefail
-
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             mkdir -p /tmp/subscription-vending
-
-            REQUEST_JSON='${{ toJson(github.event.client_payload.request) }}'
-            printf '%s\n' "$REQUEST_JSON" > /tmp/subscription-vending/request.tfvars.json
-
-            REQUEST_ID='${{ github.event.client_payload.request.request_id }}'
-            if [ -z "$REQUEST_ID" ] || [ "$REQUEST_ID" = "null" ]; then
-              REQUEST_ID="dispatch-request"
-            fi
-
-            APPLY='${{ github.event.client_payload.apply }}'
-            if [ -z "$APPLY" ] || [ "$APPLY" = "null" ]; then
-              APPLY="false"
-            fi
-
-            STATE_KEY=$(echo "$REQUEST_ID" | tr -c 'A-Za-z0-9._-' '-' | sed 's/-*$//').tfstate
-
+            cat > /tmp/subscription-vending/request.tfvars.json <<'JSON'
+          ${{ toJson(github.event.client_payload.request) }}
+          JSON
+            REQUEST_ID="${{ github.event.client_payload.request.request_id }}"
+            if [ -z "$REQUEST_ID" ]; then REQUEST_ID="dispatch-request"; fi
+            SAFE_STATE_KEY=$(echo "$REQUEST_ID" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
             echo "file=/tmp/subscription-vending/request.tfvars.json" >> "$GITHUB_OUTPUT"
-            echo "state_key=$STATE_KEY" >> "$GITHUB_OUTPUT"
-            echo "apply=$APPLY" >> "$GITHUB_OUTPUT"
+            echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
+            echo "apply=${{ github.event.client_payload.apply || false }}" >> "$GITHUB_OUTPUT"
           else
             REQUEST_FILE="${{ inputs.request_file }}"
             REQUEST_BASENAME=$(basename "$REQUEST_FILE" .tfvars.json)
-            STATE_KEY=$(echo "$REQUEST_BASENAME" | tr -c 'A-Za-z0-9._-' '-' | sed 's/-*$//').tfstate
-
+            SAFE_STATE_KEY=$(echo "$REQUEST_BASENAME" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
             echo "file=$REQUEST_FILE" >> "$GITHUB_OUTPUT"
-            echo "state_key=$STATE_KEY" >> "$GITHUB_OUTPUT"
+            echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
             echo "apply=${{ inputs.apply }}" >> "$GITHUB_OUTPUT"
           fi
 
@@ -101,6 +94,9 @@ jobs:
             -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
             -backend-config="key=${{ steps.request.outputs.state_key }}" \
+            -backend-config="tenant_id=${{ vars.AZURE_TENANT_ID }}" \
+            -backend-config="client_id=${{ vars.AZURE_CLIENT_ID }}" \
+            -backend-config="subscription_id=${{ vars.AZURE_SUBSCRIPTION_ID }}" \
             -backend-config="use_oidc=true" \
             -backend-config="use_azuread_auth=true"
 
@@ -114,12 +110,12 @@ jobs:
 
       - name: Terraform plan
         working-directory: terraform
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -out=tfplan
 
       - name: Terraform apply
         if: steps.request.outputs.apply == 'true'
         working-directory: terraform
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve tfplan
 
       - name: Terraform output
         if: steps.request.outputs.apply == 'true'
