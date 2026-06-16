@@ -1,0 +1,6 @@
+resource_group_name  = "rg-tfstate-subvending-lab"
+storage_account_name = "sttfsubvending00000"
+container_name       = "tfstate"
+key                  = "sv-001.tfstate"
+use_oidc             = true
+use_azuread_auth     = true

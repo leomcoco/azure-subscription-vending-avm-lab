@@ -1,0 +1,119 @@
+name: subscription-vending-avm
+
+"on":
+  workflow_dispatch:
+    inputs:
+      request_file:
+        description: "Arquivo de solicitação versionado no repositório"
+        required: true
+        default: "requests/app-demo-prd.tfvars.json"
+      apply:
+        description: "Executar terraform apply?"
+        required: true
+        type: boolean
+        default: false
+
+  repository_dispatch:
+    types:
+      - subscription-vending-request
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: subscription-vending-avm
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: Terraform AVM Subscription Vending
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: true
+      TF_INPUT: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve request source
+        id: request
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            mkdir -p /tmp/subscription-vending
+            cat > /tmp/subscription-vending/request.tfvars.json <<'JSON'
+          ${{ toJson(github.event.client_payload.request) }}
+          JSON
+            REQUEST_ID="${{ github.event.client_payload.request.request_id }}"
+            if [ -z "$REQUEST_ID" ]; then REQUEST_ID="dispatch-request"; fi
+            SAFE_STATE_KEY=$(echo "$REQUEST_ID" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
+            echo "file=/tmp/subscription-vending/request.tfvars.json" >> "$GITHUB_OUTPUT"
+            echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
+            echo "apply=${{ github.event.client_payload.apply || false }}" >> "$GITHUB_OUTPUT"
+          else
+            REQUEST_FILE="${{ inputs.request_file }}"
+            REQUEST_BASENAME=$(basename "$REQUEST_FILE" .tfvars.json)
+            SAFE_STATE_KEY=$(echo "$REQUEST_BASENAME" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
+            echo "file=$REQUEST_FILE" >> "$GITHUB_OUTPUT"
+            echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
+            echo "apply=${{ inputs.apply }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate request file
+        shell: pwsh
+        run: ./scripts/validate-request.ps1 -RequestFile "${{ steps.request.outputs.file }}"
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+
+      - name: Copy request to Terraform auto vars
+        shell: bash
+        run: cp "${{ steps.request.outputs.file }}" terraform/terraform.auto.tfvars.json
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=${{ steps.request.outputs.state_key }}" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Terraform fmt
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: terraform
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform apply
+        if: steps.request.outputs.apply == 'true'
+        working-directory: terraform
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Terraform output
+        if: steps.request.outputs.apply == 'true'
+        working-directory: terraform
+        run: terraform output

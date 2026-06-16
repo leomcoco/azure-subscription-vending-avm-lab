@@ -1,0 +1,21 @@
+# Terraform local files
+terraform/.terraform/
+terraform/terraform.auto.tfvars.json
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/tfplan
+terraform/*.tfplan
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Local secrets and temporary bootstrap files
+.env
+*.secret
+federated-credential.json
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
