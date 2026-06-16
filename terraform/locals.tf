@@ -4,10 +4,9 @@ locals {
   app_name_normalized = lower(replace(var.application_name, "_", "-"))
   name_suffix         = "${local.app_name_normalized}-${var.environment}-${local.location_short}"
 
-  enable_management_group_association = trim(var.management_group_id) != ""
-
-  resource_group_name = "rg-${local.name_suffix}-001"
-  vnet_name           = "vnet-${local.name_suffix}-001"
+  enable_management_group_association = trimspace(var.management_group_id) != ""
+  resource_group_name                 = "rg-${local.name_suffix}-001"
+  vnet_name                           = "vnet-${local.name_suffix}-001"
 
   common_tags = {
     application        = var.application_name
