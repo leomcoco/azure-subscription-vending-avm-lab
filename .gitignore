@@ -19,3 +19,4 @@ federated-credential.json
 .DS_Store
 .vscode/
 .idea/
+setup/*.local.sh
