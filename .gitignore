@@ -1,25 +1,26 @@
-# Terraform local files
-terraform/.terraform/
-terraform/terraform.auto.tfvars.json
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/tfplan
-terraform/*.tfplan
-
-# Crash logs
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
 crash.log
 crash.*.log
+*.tfvars
+!*.tfvars.example
+*.tfplan
+terraform/terraform.auto.tfvars.json
+.terraform.lock.hcl
 
-# Local secrets and temporary bootstrap files
+# Local/bootstrap files
 .env
-*.secret
-federated-credential.json
-
-# OS/editor
-.DS_Store
-.vscode/
-.idea/
-setup/*.local.sh
+*.local
+*.local.*
 setup/*.local.sh
 setup/bootstrap-output.env
 federated-credential.json
+
+# Azure CLI auth/cache
+.azure/
+
+# OS/Editor
+.DS_Store
+.vscode/

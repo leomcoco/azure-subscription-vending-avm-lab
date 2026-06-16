@@ -1,11 +1,6 @@
 variable "request_id" {
   type        = string
   description = "ID rastreável da solicitação de subscription vending."
-
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9-]{3,40}$", var.request_id))
-    error_message = "request_id deve conter 3 a 40 caracteres usando letras, números e hífen."
-  }
 }
 
 variable "application_name" {
@@ -50,7 +45,7 @@ variable "subscription_id" {
 
 variable "management_group_id" {
   type        = string
-  description = "ID do management group de destino. Deixe vazio para não associar a subscription no laboratório inicial."
+  description = "ID do management group de destino. Deixe vazio para não mover a subscription no laboratório."
   default     = ""
 }
 
@@ -120,12 +115,6 @@ variable "reader_group_object_id" {
   description = "Object ID do grupo Entra ID que receberá Reader no resource group da workload."
 }
 
-variable "create_network_watcher_rg" {
-  type        = bool
-  description = "Cria o NetworkWatcherRG pelo módulo AVM. Mantenha false no laboratório para evitar conflito se o RG já existir."
-  default     = false
-}
-
 variable "budget_enabled" {
   type        = bool
   description = "Define se o laboratório cria budget."
@@ -151,6 +140,13 @@ variable "budget_end_date" {
 variable "budget_contact_emails" {
   type        = list(string)
   description = "E-mails que receberão alerta de budget."
+}
+
+
+variable "create_network_watcher_rg" {
+  type        = bool
+  description = "Cria o Resource Group NetworkWatcherRG pelo módulo AVM. Deixe false no primeiro teste para evitar conflito em subscriptions já usadas."
+  default     = false
 }
 
 variable "enable_allowed_locations_policy" {

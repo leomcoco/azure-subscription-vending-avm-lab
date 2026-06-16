@@ -50,6 +50,29 @@ foreach ($field in $requiredFields) {
   }
 }
 
+$placeholderPatterns = @(
+  "^0{8}-0{4}-0{4}-0{4}-0{12}$",
+  "^1{8}-1{4}-1{4}-1{4}-1{12}$",
+  "^<.*>$",
+  "seu-email@dominio.com"
+)
+
+foreach ($field in @("subscription_id", "contributor_group_object_id", "reader_group_object_id")) {
+  foreach ($pattern in $placeholderPatterns) {
+    if ([string]$request.$field -match $pattern) {
+      throw "Campo $field ainda contém placeholder: $($request.$field)"
+    }
+  }
+}
+
+$guidRegex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+
+foreach ($field in @("subscription_id", "contributor_group_object_id", "reader_group_object_id")) {
+  if ([string]$request.$field -notmatch $guidRegex) {
+    throw "$field deve ser um GUID válido em letras minúsculas."
+  }
+}
+
 $allowedEnvironments = @("dev", "hml", "prd", "sandbox")
 if ($request.environment -notin $allowedEnvironments) {
   throw "environment inválido: $($request.environment). Use: $($allowedEnvironments -join ', ')."
@@ -70,36 +93,28 @@ if ($request.data_classification -notin $allowedDataClassification) {
   throw "data_classification inválida: $($request.data_classification)."
 }
 
-if ($request.subscription_id -notmatch "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$") {
-  throw "subscription_id deve ser um GUID válido em letras minúsculas."
+if ($request.address_space.Count -eq 0) {
+  throw "address_space deve ter pelo menos um CIDR."
 }
 
-$placeholderValues = @(
-  "00000000-0000-0000-0000-000000000000",
-  "11111111-1111-1111-1111-111111111111",
-  "seu-email@dominio.com"
-)
-
-if ($request.subscription_id -in $placeholderValues) {
-  throw "subscription_id ainda está com valor de exemplo. Atualize o request file antes de executar."
+if ($request.subnet_workload_prefixes.Count -eq 0) {
+  throw "subnet_workload_prefixes deve ter pelo menos um CIDR."
 }
 
-if ($request.contributor_group_object_id -in $placeholderValues) {
-  throw "contributor_group_object_id ainda está com valor de exemplo. Atualize o request file antes de executar."
-}
-
-if ($request.reader_group_object_id -in $placeholderValues) {
-  throw "reader_group_object_id ainda está com valor de exemplo. Atualize o request file antes de executar."
-}
-
-foreach ($cidr in @($request.address_space + $request.subnet_workload_prefixes + $request.subnet_private_endpoint_prefixes)) {
-  if ($cidr -notmatch "^(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}$") {
-    throw "CIDR inválido ou não suportado neste laboratório: $cidr"
-  }
+if ($request.subnet_private_endpoint_prefixes.Count -eq 0) {
+  throw "subnet_private_endpoint_prefixes deve ter pelo menos um CIDR."
 }
 
 if ($request.budget_amount -le 0) {
   throw "budget_amount deve ser maior que zero."
+}
+
+try {
+  [DateTimeOffset]::Parse($request.budget_start_date) | Out-Null
+  [DateTimeOffset]::Parse($request.budget_end_date) | Out-Null
+}
+catch {
+  throw "budget_start_date e budget_end_date devem estar em formato RFC3339. Exemplo: 2026-06-01T00:00:00Z"
 }
 
 if ($request.budget_contact_emails.Count -eq 0) {
@@ -107,8 +122,10 @@ if ($request.budget_contact_emails.Count -eq 0) {
 }
 
 foreach ($email in $request.budget_contact_emails) {
-  if ($email -in $placeholderValues) {
-    throw "budget_contact_emails ainda contém e-mail de exemplo. Atualize antes de executar."
+  foreach ($pattern in $placeholderPatterns) {
+    if ([string]$email -match $pattern) {
+      throw "budget_contact_emails ainda contém placeholder: $email"
+    }
   }
 
   if ($email -notmatch "^[^@\s]+@[^@\s]+\.[^@\s]+$") {

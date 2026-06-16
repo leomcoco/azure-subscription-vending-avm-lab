@@ -1,3 +1,22 @@
+locals {
+  avm_resource_groups = merge(
+    {
+      workload = {
+        name     = local.resource_group_name
+        location = var.location
+        tags     = local.common_tags
+      }
+    },
+    var.create_network_watcher_rg ? {
+      network_watcher = {
+        name     = "NetworkWatcherRG"
+        location = var.location
+        tags     = local.common_tags
+      }
+    } : {}
+  )
+}
+
 module "lz_vending" {
   source  = "Azure/avm-ptn-alz-sub-vending/azure"
   version = "0.2.1"
@@ -13,7 +32,7 @@ module "lz_vending" {
   subscription_management_group_id                  = local.enable_management_group_association ? var.management_group_id : null
 
   resource_group_creation_enabled = true
-  resource_groups                 = local.resource_groups
+  resource_groups                 = local.avm_resource_groups
 
   virtual_network_enabled = true
   virtual_networks = {
@@ -31,10 +50,10 @@ module "lz_vending" {
         }
 
         private_endpoints = {
-          name                                      = "snet-privateendpoints-001"
-          address_prefixes                          = var.subnet_private_endpoint_prefixes
-          private_endpoint_network_policies_enabled = false
-          default_outbound_access_enabled           = false
+          name                          = "snet-privateendpoints-001"
+          address_prefixes              = var.subnet_private_endpoint_prefixes
+          private_endpoint_network_policies = "Disabled"
+          default_outbound_access_enabled   = false
         }
       }
     }
@@ -47,7 +66,6 @@ module "lz_vending" {
       definition               = "Contributor"
       resource_group_scope_key = "workload"
       principal_type           = "Group"
-      use_random_uuid          = false
     }
 
     app_reader_rg = {
@@ -55,7 +73,6 @@ module "lz_vending" {
       definition               = "Reader"
       resource_group_scope_key = "workload"
       principal_type           = "Group"
-      use_random_uuid          = false
     }
   }
 
@@ -92,10 +109,10 @@ module "lz_vending" {
 
   subscription_register_resource_providers_enabled = true
   subscription_register_resource_providers_and_features = {
-    Microsoft.Authorization = []
-    Microsoft.CostManagement = []
-    Microsoft.Network       = []
-    Microsoft.Resources     = []
+    "Microsoft.Authorization" = []
+    "Microsoft.CostManagement" = []
+    "Microsoft.Network"       = []
+    "Microsoft.Resources"     = []
   }
 
   enable_telemetry = var.enable_telemetry
