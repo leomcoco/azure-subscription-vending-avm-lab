@@ -50,8 +50,8 @@ module "lz_vending" {
         }
 
         private_endpoints = {
-          name                          = "snet-privateendpoints-001"
-          address_prefixes              = var.subnet_private_endpoint_prefixes
+          name                              = "snet-privateendpoints-001"
+          address_prefixes                  = var.subnet_private_endpoint_prefixes
           private_endpoint_network_policies = "Disabled"
           default_outbound_access_enabled   = false
         }
@@ -109,10 +109,10 @@ module "lz_vending" {
 
   subscription_register_resource_providers_enabled = true
   subscription_register_resource_providers_and_features = {
-    "Microsoft.Authorization" = []
+    "Microsoft.Authorization"  = []
     "Microsoft.CostManagement" = []
-    "Microsoft.Network"       = []
-    "Microsoft.Resources"     = []
+    "Microsoft.Network"        = []
+    "Microsoft.Resources"      = []
   }
 
   enable_telemetry = var.enable_telemetry
