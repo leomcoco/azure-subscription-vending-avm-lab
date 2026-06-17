@@ -11,10 +11,10 @@ set -euo pipefail
 # - Mantém compatibilidade com o laboratório atual.
 # ============================================================================== 
 
-SUBSCRIPTION_ID="de810171-07ff-4939-a404-a9a1e5e67487"
+SUBSCRIPTION_ID="<SUA_SUBSCRIPTION_ID>"
 LOCATION="brazilsouth"
 STATE_RG="rg-tfstate-subvending-lab"
-STATE_STORAGE="sttfsubvending18167"
+STATE_STORAGE="<NOME_STORAGE_ACCOUNT_TFSTATE>"
 STATE_CONTAINER="tfstate"
 
 GITHUB_OWNER="leomcoco"

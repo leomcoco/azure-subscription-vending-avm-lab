@@ -9,11 +9,11 @@ set -euo pipefail
 #   3) Execute: ./setup/fix-github-oidc-rbac.sh
 # ============================================================================== 
 
-SUBSCRIPTION_ID="de810171-07ff-4939-a404-a9a1e5e67487"
-TENANT_ID="b8b91fa5-7eac-448d-b404-2f0a0d94bcd0"
-APP_ID="fa03b26d-bdc3-4bc0-b30e-6ca989f677b1"
+SUBSCRIPTION_ID="<SUA_SUBSCRIPTION_ID>"
+TENANT_ID="<SEU_TENANT_ID>"
+APP_ID="<AZURE_CLIENT_ID_DA_APP_REGISTRATION>"
 STATE_RG="rg-tfstate-subvending-lab"
-STATE_STORAGE="sttfsubvending18167"
+STATE_STORAGE="<NOME_STORAGE_ACCOUNT_TFSTATE>"
 
 fail() {
   echo "ERRO: $*" >&2

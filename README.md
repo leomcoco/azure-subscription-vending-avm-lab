@@ -6,11 +6,22 @@ Laboratório didático para demonstrar um motor de automação de **Subscription
 - Terraform
 - GitHub Actions
 - OpenID Connect com Microsoft Entra ID
+- Terraform State remoto em Azure Storage
 - Subscription existente, ideal para laboratório com conta MCT ou ambiente pessoal
-- `workflow_dispatch` para o Artigo 1
-- `repository_dispatch` para integração com portal/self-service no Artigo 2
+- `workflow_dispatch` para o Laboratório 1
+- `repository_dispatch` para integração com portal/self-service no Laboratório 2
 
 > Este repositório não cria uma nova subscription por padrão. Ele usa uma subscription existente para simular a entrega de uma application landing zone governada.
+
+## Status do laboratório
+
+O fluxo foi validado em modo laboratório com:
+
+- `terraform plan` executado com sucesso.
+- `terraform apply` executado com sucesso.
+- OIDC funcionando sem client secret.
+- Backend remoto funcionando com Azure Storage.
+- Baseline criada por Terraform usando o módulo AVM.
 
 ## Arquitetura
 
@@ -32,14 +43,14 @@ Subscription existente com baseline governada
 
 ## Baseline aplicada
 
-- Resource Group de workload
-- NetworkWatcherRG opcional gerenciado pelo Terraform
-- VNet e subnets
-- RBAC em grupos Microsoft Entra ID
-- Budget
-- Resource Provider registration
-- Guardrail opcional com Azure Policy
-- Output de handoff
+- Resource Group de workload.
+- VNet e subnets.
+- RBAC em grupos Microsoft Entra ID no escopo do Resource Group.
+- Budget.
+- Resource Provider registration.
+- NetworkWatcherRG opcional.
+- Guardrail opcional com Azure Policy.
+- Output de handoff.
 
 ## Estrutura
 
@@ -61,18 +72,66 @@ Subscription existente com baseline governada
 3. Crie ou publique o repositório no GitHub.
 4. Execute os pré-requisitos do Azure com `setup/bootstrap-azure-prereqs.sh`.
 5. Configure as Repository Variables.
-6. Atualize `requests/app-demo-prd.tfvars.json`.
+6. Crie seu request file a partir de `requests/app-demo-prd.tfvars.example.json`.
 7. Rode o workflow `subscription-vending-avm` com `apply=false`.
 8. Depois de validar o plano, rode novamente com `apply=true`.
 
-## Segurança
+## Segurança antes de tornar público
 
-- Não armazene secrets no repositório.
-- Use OIDC em vez de client secret.
-- Use `apply=false` primeiro.
-- Para laboratório, o RBAC é aplicado no Resource Group, não na subscription inteira.
-- Deixe `management_group_id` vazio até validar suas permissões.
-- Deixe `enable_allowed_locations_policy=false` no primeiro teste.
+Antes de abrir o repositório para a comunidade, leia:
+
+- `docs/12-publicacao-segura-e-evidencias.md`
+
+A recomendação é manter no repositório público apenas o arquivo:
+
+```text
+requests/app-demo-prd.tfvars.example.json
+```
+
+E remover do controle de versão qualquer arquivo real como:
+
+```text
+requests/app-demo-prd.tfvars.json
+setup/bootstrap-output.env
+setup/*.local.sh
+federated-credential.json
+```
+
+## Laboratório 2
+
+O workflow principal já está preparado para receber um evento `repository_dispatch`. Isso permite integrar um portal/self-service no segundo artigo usando:
+
+```text
+Microsoft Forms ou Power Apps
+↓
+Power Automate
+↓
+Aprovação
+↓
+GitHub repository_dispatch
+↓
+GitHub Actions
+↓
+Terraform
+```
+
+Contrato técnico do Laboratório 2:
+
+- `docs/13-contrato-laboratorio-2-repository-dispatch.md`
+
+## Limpeza
+
+Para remover os recursos criados pelo laboratório, use o workflow:
+
+```text
+subscription-vending-destroy
+```
+
+Ele exige confirmação explícita com:
+
+```text
+DESTROY
+```
 
 ## Artigos incluídos
 

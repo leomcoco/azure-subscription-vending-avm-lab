@@ -33,11 +33,11 @@ git push
 Não precisa deletar variáveis antigas. O comando `gh variable set` sobrescreve o valor existente.
 
 ```bash
-gh variable set AZURE_CLIENT_ID --body "fa03b26d-bdc3-4bc0-b30e-6ca989f677b1"
-gh variable set AZURE_TENANT_ID --body "b8b91fa5-7eac-448d-b404-2f0a0d94bcd0"
-gh variable set AZURE_SUBSCRIPTION_ID --body "de810171-07ff-4939-a404-a9a1e5e67487"
+gh variable set AZURE_CLIENT_ID --body "<AZURE_CLIENT_ID_DA_APP_REGISTRATION>"
+gh variable set AZURE_TENANT_ID --body "<SEU_TENANT_ID>"
+gh variable set AZURE_SUBSCRIPTION_ID --body "<SUA_SUBSCRIPTION_ID>"
 gh variable set TF_STATE_RG --body "rg-tfstate-subvending-lab"
-gh variable set TF_STATE_STORAGE_ACCOUNT --body "sttfsubvending18167"
+gh variable set TF_STATE_STORAGE_ACCOUNT --body "<NOME_STORAGE_ACCOUNT_TFSTATE>"
 gh variable set TF_STATE_CONTAINER --body "tfstate"
 gh variable list
 ```

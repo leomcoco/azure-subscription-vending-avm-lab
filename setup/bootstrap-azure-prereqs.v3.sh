@@ -24,7 +24,7 @@ LOCATION="brazilsouth"
 STATE_RG="rg-tfstate-subvending-lab"
 
 # Se você já criou a Storage Account em uma execução anterior, reutilize o nome aqui.
-# Exemplo do seu ambiente: STATE_STORAGE="sttfsubvending18167"
+# Exemplo do seu ambiente: STATE_STORAGE="<NOME_STORAGE_ACCOUNT_TFSTATE>"
 STATE_STORAGE=""
 STATE_CONTAINER="tfstate"
 

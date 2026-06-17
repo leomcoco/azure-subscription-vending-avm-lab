@@ -14,7 +14,7 @@ A role `Owner` no Storage Account é uma permissão de management plane. Para au
 
 ## Correção pelo Azure Portal
 
-1. Acesse o Storage Account `sttfsubvending18167`.
+1. Acesse o Storage Account `<NOME_STORAGE_ACCOUNT_TFSTATE>`.
 2. Acesse **Access Control (IAM)**.
 3. Clique em **Add role assignment**.
 4. Selecione a role **Storage Blob Data Contributor**.
@@ -27,9 +27,9 @@ A role `Owner` no Storage Account é uma permissão de management plane. Para au
 Se a sua sessão Azure CLI conseguir executar role assignments:
 
 ```bash
-APP_ID="fa03b26d-bdc3-4bc0-b30e-6ca989f677b1"
+APP_ID="<AZURE_CLIENT_ID_DA_APP_REGISTRATION>"
 STATE_RG="rg-tfstate-subvending-lab"
-STATE_STORAGE="sttfsubvending18167"
+STATE_STORAGE="<NOME_STORAGE_ACCOUNT_TFSTATE>"
 
 SP_OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id -o tsv)
 STATE_STORAGE_ID=$(az storage account show \

@@ -1,14 +1,19 @@
-# Terraform
+# Terraform runtime
 **/.terraform/*
 *.tfstate
 *.tfstate.*
 crash.log
 crash.*.log
-*.tfvars
-!*.tfvars.example
 *.tfplan
 terraform/terraform.auto.tfvars.json
-.terraform.lock.hcl
+
+# Keep .terraform.lock.hcl versioned for reproducible provider/module initialization.
+# Do not ignore .terraform.lock.hcl.
+
+# Request files
+# Keep only example request files in the public repository.
+requests/*.tfvars.json
+!requests/*.tfvars.example.json
 
 # Local/bootstrap files
 .env
@@ -16,7 +21,7 @@ terraform/terraform.auto.tfvars.json
 *.local.*
 setup/*.local.sh
 setup/bootstrap-output.env
-federated-credential.json
+federated-credential*.json
 
 # Azure CLI auth/cache
 .azure/

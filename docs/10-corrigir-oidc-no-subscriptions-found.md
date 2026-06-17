@@ -31,8 +31,8 @@ gh workflow run subscription-vending-avm.yml \
 ## Validação manual
 
 ```bash
-APP_ID="fa03b26d-bdc3-4bc0-b30e-6ca989f677b1"
-SUBSCRIPTION_ID="de810171-07ff-4939-a404-a9a1e5e67487"
+APP_ID="<AZURE_CLIENT_ID_DA_APP_REGISTRATION>"
+SUBSCRIPTION_ID="<SUA_SUBSCRIPTION_ID>"
 SP_OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id -o tsv)
 
 az role assignment list \
