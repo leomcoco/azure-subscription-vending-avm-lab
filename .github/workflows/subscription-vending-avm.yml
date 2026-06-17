@@ -41,6 +41,7 @@ jobs:
       TF_STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
       TF_INPUT: false
       TF_IN_AUTOMATION: true
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -73,7 +74,6 @@ jobs:
       - name: Validate request file
         shell: pwsh
         run: ./scripts/validate-request.ps1 -RequestFile "${{ steps.request.outputs.file }}"
-
 
       - name: Validate GitHub variables
         shell: bash
@@ -148,14 +148,30 @@ jobs:
         working-directory: terraform
         shell: bash
         run: |
-          echo "## Subscription Vending AVM" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Request source: `${{ steps.request.outputs.file }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Terraform state key: `${{ steps.request.outputs.state_key }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Apply requested: `${{ steps.request.outputs.apply }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          terraform show -no-color tfplan | grep -E "Plan:|No changes" >> "$GITHUB_STEP_SUMMARY" || true
+          REQUEST_SOURCE="${{ steps.request.outputs.file }}"
+          STATE_KEY="${{ steps.request.outputs.state_key }}"
+          APPLY_REQUESTED="${{ steps.request.outputs.apply }}"
+          PLAN_SUMMARY=$(terraform show -no-color tfplan | grep -E "Plan:|No changes" || true)
 
+          {
+            echo "## Subscription Vending AVM"
+            echo ""
+            echo "| Item | Valor |"
+            echo "|---|---|"
+            echo "| Request source | \`$REQUEST_SOURCE\` |"
+            echo "| Terraform state key | \`$STATE_KEY\` |"
+            echo "| Apply requested | \`$APPLY_REQUESTED\` |"
+            echo ""
+            if [ -n "$PLAN_SUMMARY" ]; then
+              echo "### Terraform plan summary"
+              echo ""
+              echo "\`\`\`text"
+              echo "$PLAN_SUMMARY"
+              echo "\`\`\`"
+            else
+              echo "Terraform plan summary was not detected in the plan output."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Terraform apply
         if: steps.request.outputs.apply == 'true'
