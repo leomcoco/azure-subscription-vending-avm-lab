@@ -36,6 +36,9 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       ARM_USE_OIDC: true
       ARM_USE_AZUREAD: true
+      TF_STATE_RG: ${{ vars.TF_STATE_RG }}
+      TF_STATE_STORAGE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+      TF_STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
       TF_INPUT: false
       TF_IN_AUTOMATION: true
 
