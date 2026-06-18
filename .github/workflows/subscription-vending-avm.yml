@@ -53,19 +53,26 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             mkdir -p /tmp/subscription-vending
-            cat > /tmp/subscription-vending/request.tfvars.json <<'JSON'
-          ${{ toJson(github.event.client_payload.request) }}
-          JSON
-            REQUEST_ID="${{ github.event.client_payload.request.request_id }}"
+
+            jq -e '.client_payload.request' "$GITHUB_EVENT_PATH" > /tmp/subscription-vending/request.tfvars.json
+
+            REQUEST_ID=$(jq -r '.client_payload.request.request_id // empty' "$GITHUB_EVENT_PATH")
             if [ -z "$REQUEST_ID" ]; then REQUEST_ID="dispatch-request"; fi
+
             SAFE_STATE_KEY=$(echo "$REQUEST_ID" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
+
+            APPLY=$(jq -r '.client_payload.apply // false' "$GITHUB_EVENT_PATH")
+            if [ "$APPLY" != "true" ]; then APPLY="false"; fi
+
             echo "file=/tmp/subscription-vending/request.tfvars.json" >> "$GITHUB_OUTPUT"
             echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
-            echo "apply=${{ github.event.client_payload.apply || false }}" >> "$GITHUB_OUTPUT"
+            echo "apply=${APPLY}" >> "$GITHUB_OUTPUT"
+            echo "repository_dispatch request resolved without printing payload."
           else
             REQUEST_FILE="${{ inputs.request_file }}"
             REQUEST_BASENAME=$(basename "$REQUEST_FILE" .tfvars.json)
             SAFE_STATE_KEY=$(echo "$REQUEST_BASENAME" | tr -cs '[:alnum:]-' '-' | sed 's/^-//;s/-$//')
+
             echo "file=$REQUEST_FILE" >> "$GITHUB_OUTPUT"
             echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
             echo "apply=${{ inputs.apply }}" >> "$GITHUB_OUTPUT"
