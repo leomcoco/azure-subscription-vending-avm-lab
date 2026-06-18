@@ -78,6 +78,26 @@ jobs:
             echo "apply=${{ inputs.apply }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Mask runtime identifiers
+        if: always()
+        shell: bash
+        run: |
+          echo "::add-mask::$ARM_CLIENT_ID"
+          echo "::add-mask::$ARM_TENANT_ID"
+          echo "::add-mask::$ARM_SUBSCRIPTION_ID"
+          echo "::add-mask::$TF_STATE_STORAGE_ACCOUNT"
+          echo "::add-mask::$TF_STATE_RG"
+          echo "::add-mask::$TF_STATE_CONTAINER"
+
+          REQUEST_FILE="${{ steps.request.outputs.file }}"
+
+          if [ -f "$REQUEST_FILE" ]; then
+            jq -r '.subscription_id // empty' "$REQUEST_FILE" | xargs -r -I{} echo "::add-mask::{}"
+            jq -r '.contributor_group_object_id // empty' "$REQUEST_FILE" | xargs -r -I{} echo "::add-mask::{}"
+            jq -r '.reader_group_object_id // empty' "$REQUEST_FILE" | xargs -r -I{} echo "::add-mask::{}"
+            jq -r '.budget_contact_emails[]? // empty' "$REQUEST_FILE" | xargs -r -I{} echo "::add-mask::{}"
+          fi
+
       - name: Validate request file
         shell: pwsh
         run: ./scripts/validate-request.ps1 -RequestFile "${{ steps.request.outputs.file }}"
