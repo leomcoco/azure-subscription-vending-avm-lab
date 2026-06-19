@@ -20,6 +20,7 @@ name: subscription-vending-avm
 permissions:
   id-token: write
   contents: read
+  issues: write
 
 concurrency:
   group: subscription-vending-avm
@@ -210,6 +211,41 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Comment Terraform plan result on issue
+        if: steps.request.outputs.issue_number != ''
+        working-directory: terraform
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.request.outputs.issue_number }}
+          REQUEST_ID: ${{ github.event.client_payload.request.request_id }}
+          APPLY_REQUESTED: ${{ steps.request.outputs.apply }}
+          STATE_KEY: ${{ steps.request.outputs.state_key }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          PLAN_SUMMARY=$(terraform show -no-color tfplan | grep -E "Plan:|No changes" || true)
+
+          cat > /tmp/subscription-vending-issue-comment.md <<EOF
+          ## Subscription Vending - Terraform Plan
+
+          **Request ID:** \`${REQUEST_ID}\`  
+          **Workflow run:** ${RUN_URL}  
+          **Terraform state key:** \`${STATE_KEY}\`  
+          **Apply requested:** \`${APPLY_REQUESTED}\`
+
+          ### Plan summary
+
+          \`\`\`text
+          ${PLAN_SUMMARY}
+          \`\`\`
+
+          This execution was triggered by \`repository_dispatch\` and is currently running in plan mode.
+          EOF
+
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --body-file /tmp/subscription-vending-issue-comment.md
+      
       - name: Terraform apply
         if: steps.request.outputs.apply == 'true'
         working-directory: terraform
