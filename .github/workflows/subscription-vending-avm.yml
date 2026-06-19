@@ -64,9 +64,12 @@ jobs:
             APPLY=$(jq -r '.client_payload.apply // false' "$GITHUB_EVENT_PATH")
             if [ "$APPLY" != "true" ]; then APPLY="false"; fi
 
+            ISSUE_NUMBER=$(jq -r '.client_payload.issue_number // empty' "$GITHUB_EVENT_PATH")
+
             echo "file=/tmp/subscription-vending/request.tfvars.json" >> "$GITHUB_OUTPUT"
             echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
             echo "apply=${APPLY}" >> "$GITHUB_OUTPUT"
+            echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
             echo "repository_dispatch request resolved without printing payload."
           else
             REQUEST_FILE="${{ inputs.request_file }}"
@@ -76,6 +79,7 @@ jobs:
             echo "file=$REQUEST_FILE" >> "$GITHUB_OUTPUT"
             echo "state_key=${SAFE_STATE_KEY}.tfstate" >> "$GITHUB_OUTPUT"
             echo "apply=${{ inputs.apply }}" >> "$GITHUB_OUTPUT"
+            echo "issue_number=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Mask runtime identifiers
@@ -189,6 +193,11 @@ jobs:
             echo "| Terraform state key | \`$STATE_KEY\` |"
             echo "| Apply requested | \`$APPLY_REQUESTED\` |"
             echo ""
+
+            if [ -n "${{ steps.request.outputs.issue_number }}" ]; then
+              echo "| GitHub Issue | #${{ steps.request.outputs.issue_number }} |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
             if [ -n "$PLAN_SUMMARY" ]; then
               echo "### Terraform plan summary"
               echo ""
