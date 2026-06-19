@@ -91,7 +91,6 @@ jobs:
           echo "::add-mask::$ARM_SUBSCRIPTION_ID"
           echo "::add-mask::$TF_STATE_STORAGE_ACCOUNT"
           echo "::add-mask::$TF_STATE_RG"
-          echo "::add-mask::$TF_STATE_CONTAINER"
 
           REQUEST_FILE="${{ steps.request.outputs.file }}"
 
@@ -175,7 +174,7 @@ jobs:
         working-directory: terraform
         run: terraform plan -input=false -out=tfplan
 
-        - name: Publish workflow summary
+      - name: Publish workflow summary
         working-directory: terraform
         shell: bash
         run: |
