@@ -175,13 +175,14 @@ jobs:
         working-directory: terraform
         run: terraform plan -input=false -out=tfplan
 
-      - name: Publish workflow summary
+        - name: Publish workflow summary
         working-directory: terraform
         shell: bash
         run: |
           REQUEST_SOURCE="${{ steps.request.outputs.file }}"
           STATE_KEY="${{ steps.request.outputs.state_key }}"
           APPLY_REQUESTED="${{ steps.request.outputs.apply }}"
+          ISSUE_NUMBER="${{ steps.request.outputs.issue_number }}"
           PLAN_SUMMARY=$(terraform show -no-color tfplan | grep -E "Plan:|No changes" || true)
 
           {
@@ -192,11 +193,12 @@ jobs:
             echo "| Request source | \`$REQUEST_SOURCE\` |"
             echo "| Terraform state key | \`$STATE_KEY\` |"
             echo "| Apply requested | \`$APPLY_REQUESTED\` |"
-            echo ""
 
-            if [ -n "${{ steps.request.outputs.issue_number }}" ]; then
-              echo "| GitHub Issue | #${{ steps.request.outputs.issue_number }} |" >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "$ISSUE_NUMBER" ]; then
+              echo "| GitHub Issue | #$ISSUE_NUMBER |"
             fi
+
+            echo ""
 
             if [ -n "$PLAN_SUMMARY" ]; then
               echo "### Terraform plan summary"
